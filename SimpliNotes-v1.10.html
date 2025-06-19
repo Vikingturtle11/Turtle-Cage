@@ -236,6 +236,14 @@
   user-select: none;
 }
 
+.ql-size-10px { font-size: 10px; }
+.ql-size-12px { font-size: 12px; }
+.ql-size-14px { font-size: 14px; }
+.ql-size-16px { font-size: 16px; }
+.ql-size-18px { font-size: 18px; }
+.ql-size-24px { font-size: 24px; }
+.ql-size-32px { font-size: 32px; }	
+	  
   </style>
 </head>
 <body>
@@ -847,7 +855,7 @@
       displayLogHistory(); 
 
       // Whitelist the font sizes you want to use
-let Size = Quill.import('attributors/style/size');
+let Size = Quill.import('attributors/class/size');
 Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '24px', '32px'];
 Quill.register(Size, true);
 // --- End of new block ---
