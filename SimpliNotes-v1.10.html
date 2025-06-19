@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SimpliNotes</title>
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    textarea,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    select {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: auto;
+      margin: 0 5px 0 0;
+      padding: 0;
+      vertical-align: middle;
+    }
+    label {
+        margin-bottom: 5px;
+        display: block;
+    }
+    label > input[type="checkbox"] {
+        margin-bottom: 0;
+    }
+
+    .identifier-group,
+    .contact-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap; 
+    }
+    .identifier-group label,
+    .contact-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 0;
+    }
+    #identifierSection > label:first-child {
+        display: block;
+        margin-bottom: 5px;
+    }
+    #contactSection > label:first-child {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .hidden { display: none !important; }
+    .button-group, .quick-actions-container {
+        display: flex; 
+        gap: 10px; 
+        flex-wrap: wrap; 
+    }
+    .quick-actions-container {
+        margin-bottom: 10px;
+    }
+    .button-group { margin-top: 20px; }
+
+    button {
+      padding: 10px; background-color: #28a745; color: white;
+      border: none; cursor: pointer; flex: 1; border-radius: 5px;
+    }
+    button:hover { background-color: #218838; }
+    .clear-button { background-color: #dc3545; }
+    .clear-button:hover { background-color: #c82333; }
+    .quick-action-btn { background-color: #007bff; }
+    .quick-action-btn:hover { background-color: #0056b3; }
+    .toggleable-section h3 { margin-top: 15px; }
+
+    .top-right-buttons {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 8px; 
+        z-index: 998;
+    }
+    .top-right-buttons button { 
+        padding: 8px 12px; 
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        flex: 0 1 auto; 
+    }
+    #openSettingsBtn {
+      background-color: #6c757d;
+    }
+    #openSettingsBtn:hover { background-color: #5a6268; }
+    #openNewInstanceBtnMain { 
+        background-color: #17a2b8;
+    }
+    #openNewInstanceBtnMain:hover { background-color: #138496; }
+
+
+    #slidingSettingsPanel {
+      position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
+      background-color: #f5f5f5; box-shadow: -4px 0 15px rgba(0,0,0,0.2);
+      transition: right 0.3s ease-out; z-index: 1000; padding: 20px;
+      overflow-y: auto; box-sizing: border-box;
+    }
+    #slidingSettingsPanel.open { right: 0; }
+    #closeSettingsBtn {
+      position: sticky; top: 0; float: right; background: none; border: none;
+      font-size: 1.8em; cursor: pointer; color: #555; padding: 0;
+      margin-top: -10px; margin-right: -10px; z-index: 1001;
+    }
+    #closeSettingsBtn:hover { color: #333; }
+    #overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5); z-index: 999;
+      display: none;
+    }
+    #overlay.active { display: block; }
+    #settingsContent { margin-top: 30px; }
+    #settingsContent h3, #settingsContent h4 { margin-top: 0; margin-bottom: 10px; color: #333; }
+    #settingsContent label { display: block; margin-bottom: 8px; font-size: 0.95em; align-items: center; }
+    #settingsContent label input[type="checkbox"] { margin-right: 8px; }
+    #settingsContent input[type="text"] { margin-top: 5px; width: 100%; }
+    
+    #instanceManagement { margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; }
+    #currentInstanceDisplay { font-size: 0.9em; color: #333; margin-top: 5px; word-break: break-all; text-align: center;}
+
+    #callLogHeading {
+        display: flex; 
+        align-items: center; 
+        gap: 10px; 
+    }
+    #mainPageInstanceTag {
+        font-size: 0.6em; 
+        font-weight: bold;
+        padding: 3px 8px;
+        border-radius: 10px;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        vertical-align: middle; 
+    }
+    #mainPageInstanceTag.main {
+        background-color: #28a745; 
+    }
+    #mainPageInstanceTag.temp {
+        background-color: #ffc107; 
+        color: #333; 
+    }
+
+
+    #todoListSection .add-todo-container { display: flex; gap: 10px; margin-bottom: 15px; }
+    #todoListSection #newTodoInput { flex-grow: 1; margin-bottom: 0; }
+    #todoListSection #addTodoBtn { flex-shrink: 0; background-color: #007bff; padding: 8px 15px; }
+    #todoListSection #addTodoBtn:hover { background-color: #0056b3; }
+    #todoListContainer { max-height: 300px; overflow-y: auto; padding-right: 5px; }
+    .todo-item {
+        padding: 8px 5px; border-bottom: 1px solid #eee;
+        margin-bottom: 4px; position: relative; 
+    }
+    .todo-item:last-child { border-bottom: none; margin-bottom: 0; }
+    .todo-item input[type="checkbox"] { margin-right: 8px; width: 15px; height: 15px; vertical-align: middle; }
+    .todo-item .todo-text {
+        font-size: 0.9em; line-height: 1.3; min-width: 0; 
+        word-break: break-word; margin-right: 35px; 
+        display: inline-block; vertical-align: middle; 
+    }
+    .todo-item.completed .todo-text { text-decoration: line-through; color: #aaa; }
+    .todo-item .delete-todo-btn {
+        position: absolute; right: 5px; top: 50%; transform: translateY(-50%); 
+        background: none; border: none; color: #dc3545;
+        font-size: 1.1em; font-weight: bold; cursor: pointer; padding: 0 5px; 
+    }
+    .todo-item .delete-todo-btn:hover { color: #c82333; }
+
+    /* Dynamic Custom Field Styles */
+    .dynamic-field-settings-item {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+    .dynamic-field-settings-item input[type="text"] {
+        flex-grow: 1;
+        margin: 0;
+    }
+    .dynamic-field-settings-item button {
+        flex-shrink: 0;
+        padding: 5px 8px;
+        font-size: 0.8em;
+    }
+    #addNewFieldBtn {
+        width: 100%;
+        background-color: #5cb85c;
+    }
+    #addNewFieldBtn:hover {
+        background-color: #4cae4c;
+    }
+    .required-asterisk {
+        color: red;
+        margin-left: 4px;
+        font-weight: bold;
+    }
+
+    #richTextEditorContainer {
+      height: 250px; /* Give the editor a set height */
+      margin-bottom: 10px;
+    }
+
+    /* Prevents the toolbar from stealing focus and deselecting text */
+.ql-toolbar {
+  user-select: none;
+}
+
+  </style>
+</head>
+<body>
+  <div class="top-right-buttons">
+    <button id="openNewInstanceBtnMain">New Instance</button>
+    <button id="openSettingsBtn">Settings</button>
+  </div>
+
+  <h2 id="callLogHeading">Call Log <span id="mainPageInstanceTag"></span></h2>
+  <label for="callerType">Caller Type:</label>
+  <select id="callerType" onchange="toggleFields()">
+    <option value="Client">Client</option>
+    <option value="Applicant">Applicant</option>
+    <option value="Third Party">Third Party</option>
+  </select>
+  <div id="clientNameSection">
+    <label for="clientName">Name:<span id="nameRequiredAsterisk" class="required-asterisk hidden">*</span></label>
+    <input type="text" id="clientName" placeholder="Enter name / company name" />
+  </div>
+  <div id="contactSection">
+    <label>Contact Method:<span class="required-asterisk">*</span></label>
+    <div class="contact-group">
+        <label><input type="checkbox" id="called" /> Called</label>
+        <label><input type="checkbox" id="emailed" /> Emailed</label>
+        <label><input type="checkbox" id="portalmessage" /> Portal</label>
+        <label><input type="checkbox" id="outbound" /> Outbound Call</label>
+    </div>
+  </div>
+  <br />
+  <div id="identifierSection">
+    <label>Verified:<span id="verifiedRequiredAsterisk" class="required-asterisk hidden">*</span></label> 
+    <div class="identifier-group"> 
+        <label><input type="checkbox" id="identifier1" /> Name</label>
+        <label><input type="checkbox" id="identifier2" /> DOB</label>
+        <label><input type="checkbox" id="identifier3" /> Reference #</label>
+        <label><input type="checkbox" id="identifier4" /> Last 4 SSN</label>
+        <label><input type="checkbox" id="identifierNA" /> N/A</label>
+    </div>
+  </div>
+  <label for="identifierDisplay" style="display: none;">Selected Identifiers:</label>
+  <textarea id="identifierDisplay" rows="2" readonly style="display: none;"></textarea>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 150px;">
+      <label for="fileNumber">File Number:<span class="required-asterisk">*</span></label>
+      <input type="text" id="fileNumber" placeholder="File Number" maxlength="7" pattern="\d{7}" />
+    </div>
+    <div style="flex: 1; min-width: 150px;">
+      <label for="confirmationNumber">Additional Information:</label>
+      <input type="text" id="confirmationNumber" placeholder="Extra Entry For Logs" />
+    </div>
+  </div>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <div style="flex: 1; display: none;"> <label for="callPreview">Call Summary:</label>
+      <textarea id="callPreview" rows="5" readonly></textarea>
+    </div>
+    <div style="flex: 1; min-width: 100%;">
+      <label for="callNotes">Call Notes:</label>
+      <textarea id="callNotes" rows="5" placeholder="Document what occurred on the call"></textarea>
+    </div>
+  </div>
+
+  <div>
+      <label for="ticketNumber">Ticket Number:<span id="ticketRequiredAsterisk" class="required-asterisk hidden">*</span></label>
+      <input type="text" id="ticketNumber" placeholder="#SUP12345678" maxlength="12" pattern="#[A-Za-z]{3}\d{8}" />
+  </div>
+
+  <div id="quickActionsSection" class="toggleable-section hidden">
+    <h3>Quick Actions</h3>
+    <div class="quick-actions-container">
+        <button class="quick-action-btn" onclick="addTemplate('SSN and DOB verified as correct, notified *PROCESSOR NAME/S*.')">SSN/DOB verified as correct</button>
+        <button class="quick-action-btn" onclick="addTemplate('SSN input incorrectly - SSN corrected & Report Redispatched. Notified *PROCESSOR NAME/s*.')">SSN input incorrectly - SSN corrected</button>
+        <button class="quick-action-btn" onclick="addTemplate('DOB input incorrectly - DOB corrected & Report Redispatched. Notified *PROCESSOR NAME/s*.')">DOB input incorrectly - DOB corrected</button>
+        <button class="quick-action-btn" onclick="addTemplate('Clinic location updated per request.')">Clinic location updated</button>
+        <button class="quick-action-btn" onclick="addTemplate('Asked for extension on drug screen.')">Drug Screen Extension</button>
+        <button class="quick-action-btn" onclick="addTemplate('Asked for status update on the report.')">Status update on report</button>
+        <button class="quick-action-btn" onclick="addTemplate('Requested consumer copy.')">Consumer Copy</button>
+        <button class="quick-action-btn" onclick="addTemplate('ETA request sent to vendor. Please notify requestor with update.')">ETA Request Sent</button>
+        <button class="quick-action-btn" onclick="addTemplate('Unable to view notification. Resent notice and assisted in gaining access to report.')">Applicant Portal / Notification Help</button>
+    </div>
+  </div>
+
+  <div class="button-group">
+    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    <button class="clear-button" onclick="clearFields()">Clear</button>
+  </div>
+  <div id="personalNotesSection" class="toggleable-section hidden">
+    <h3>Personal Notes</h3>
+    <textarea id="internalNotes" rows="5" placeholder="Enter personal notes here. This does not copy or clear with buttons above."></textarea>
+  </div>
+  <div id="devNotesSection" class="toggleable-section hidden">
+    <h3>Dev Notes</h3>
+    <textarea id="devNotes" rows="5" placeholder="Hogan's development notes go here. You can use this for whatever I guess."></textarea>
+  </div>
+  <div id="todoListSection" class="toggleable-section hidden">
+    <h3>To-Do List</h3>
+    <div class="add-todo-container">
+        <input type="text" id="newTodoInput" placeholder="Add a new to-do item...">
+        <button id="addTodoBtn">Add</button>
+    </div>
+    <div id="todoListContainer"></div>
+  </div>
+
+  <div id="richTextSection" class="toggleable-section hidden">
+  <h3>Rich Text Notes</h3>
+  <div id="richTextEditorContainer"></div> </div>
+  
+  <div id="dynamicFieldsContainer"></div>
+
+  <div id="auditLogSection" class="toggleable-section hidden">
+    <h3>Audit Log</h3>
+    <textarea id="logHistory" rows="10" readonly></textarea>
+    <button onclick="clearLogHistory()" class="clear-button" style="width: auto; margin-top: 5px;">Clear Audit Log</button>
+  </div>
+
+  <div id="slidingSettingsPanel">
+    <button id="closeSettingsBtn">&times;</button>
+    <div id="settingsContent">
+        <h3>Show/Hide Sections</h3>
+        <label><input type="checkbox" id="toggleQuickActions" data-target="quickActionsSection"> Show Quick Actions</label>
+        <label><input type="checkbox" id="toggleAuditLog" data-target="auditLogSection"> Show Audit Log</label>
+        <hr style="margin: 15px 0;">
+        <label><input type="checkbox" id="togglePersonalNotes" data-target="personalNotesSection"> Show Personal Notes</label>
+        <label><input type="checkbox" id="toggleDevNotes" data-target="devNotesSection"> Show Dev Notes</label>
+        <label><input type="checkbox" id="toggleTodoList" data-target="todoListSection"> Show To-Do List</label>
+        <label><input type="checkbox" id="toggleRichText" data-target="richTextSection"> Show Rich Text Notes</label>
+        <hr style="margin: 15px 0;">
+        <label><input type="checkbox" id="toggleApplicantName"> Show Name Field (Applicant)</label>
+
+        <div id="dynamicCustomFieldsManagement">
+            <hr style="margin: 15px 0;">
+            <h4>Custom Fields</h4>
+            <div id="dynamicFieldsSettingsContainer">
+            </div>
+            <button id="addNewFieldBtn" style="flex: auto; margin-top: 10px;">Add New Custom Field</button>
+        </div>
+        
+        <div id="instanceManagement">
+            <h4>Instance Status</h4>
+            <p id="currentInstanceDisplay"></p> 
+        </div>
+    </div>
+  </div>
+  <div id="overlay"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
+  <script>
+    const DEFAULT_INSTANCE_ID = 'default_simpliNotes_instance'; 
+    const GLOBAL_AUDIT_LOG_KEY = 'global_simpliNotes_callLogs';
+    let currentInstanceId = DEFAULT_INSTANCE_ID; 
+
+    function initializeInstance() {
+        const params = new URLSearchParams(window.location.search);
+        const instanceIdFromUrl = params.get('instance');
+        if (instanceIdFromUrl) {
+            currentInstanceId = instanceIdFromUrl;
+        }
+        
+        const instanceDisplayEl = document.getElementById('currentInstanceDisplay');
+        const mainPageTagEl = document.getElementById('mainPageInstanceTag');
+
+        if (currentInstanceId === DEFAULT_INSTANCE_ID) {
+            if (instanceDisplayEl) instanceDisplayEl.textContent = "Main Instance";
+            if (mainPageTagEl) {
+                mainPageTagEl.textContent = "Main";
+                mainPageTagEl.className = 'main'; 
+            }
+            document.title = "SimpliNotes - Main";
+        } else {
+            if (instanceDisplayEl) instanceDisplayEl.innerHTML = `Temporary Instance <br>(ID: ${currentInstanceId})`;
+            if (mainPageTagEl) {
+                mainPageTagEl.textContent = "Temp";
+                mainPageTagEl.className = 'temp'; 
+            }
+            document.title = `SimpliNotes - Temp (${currentInstanceId.substring(0,8)}...)`;
+        }
+        if(mainPageTagEl) mainPageTagEl.style.display = 'inline-block'; 
+    }
+
+    const fieldsConfig = {
+        quickActions: { 
+            sectionId: 'quickActionsSection',
+            toggleCheckboxId: 'toggleQuickActions',
+            visibleKey: 'quickActionsVisible',
+            defaultVisible: true
+        },
+        auditLog: { 
+            sectionId: 'auditLogSection',
+            toggleCheckboxId: 'toggleAuditLog',
+            visibleKey: 'auditLogVisible',
+            defaultVisible: true
+        },
+        personalNotes: {
+            textareaId: 'internalNotes', dataKey: 'personalNotesData', sectionId: 'personalNotesSection',
+            toggleCheckboxId: 'togglePersonalNotes', visibleKey: 'personalNotesVisible', defaultVisible: true
+        },
+        devNotes: {
+            textareaId: 'devNotes', dataKey: 'devNotesData', sectionId: 'devNotesSection',
+            toggleCheckboxId: 'toggleDevNotes', visibleKey: 'devNotesVisible', defaultVisible: false
+        },
+        todoList: {
+            dataKey: 'todoListData', sectionId: 'todoListSection',
+            toggleCheckboxId: 'toggleTodoList', visibleKey: 'todoListVisible', defaultVisible: false
+        },
+        richText: {
+            dataKey: 'richTextData',
+            sectionId: 'richTextSection',
+            toggleCheckboxId: 'toggleRichText',
+            visibleKey: 'richTextVisible',
+            defaultVisible: true,
+            editorContainerId: 'richTextEditorContainer'
+        }
+    };
+
+    let todoItems = []; 
+    let customFields = [];
+    const DYNAMIC_FIELDS_KEY = 'dynamicCustomFields';
+
+    const todoListContainer = document.getElementById('todoListContainer');
+    const newTodoInput = document.getElementById('newTodoInput');
+    const addTodoBtn = document.getElementById('addTodoBtn');
+    const dynamicFieldsContainer = document.getElementById('dynamicFieldsContainer');
+    const dynamicFieldsSettingsContainer = document.getElementById('dynamicFieldsSettingsContainer');
+    const addNewFieldBtn = document.getElementById('addNewFieldBtn');
+
+
+    function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
+
+    function renderCustomFields() {
+        if (!dynamicFieldsContainer) return;
+        dynamicFieldsContainer.innerHTML = '';
+        customFields.forEach(field => {
+            const fieldWrapper = document.createElement('div');
+            fieldWrapper.id = `dyn-field-wrapper-${field.id}`;
+            fieldWrapper.className = 'toggleable-section';
+            if (!field.isVisible) {
+                fieldWrapper.classList.add('hidden');
+            }
+            const heading = document.createElement('h3');
+            heading.textContent = field.name;
+            const textarea = document.createElement('textarea');
+            textarea.rows = 5;
+            textarea.placeholder = `Notes for ${field.name}...`;
+            textarea.value = field.content;
+            textarea.addEventListener('input', () => {
+                updateCustomFieldContent(field.id, textarea.value);
+            });
+            fieldWrapper.appendChild(heading);
+            fieldWrapper.appendChild(textarea);
+            dynamicFieldsContainer.appendChild(fieldWrapper);
+        });
+    }
+
+    function renderCustomFieldsSettings() {
+        if (!dynamicFieldsSettingsContainer) return;
+        dynamicFieldsSettingsContainer.innerHTML = '';
+        customFields.forEach(field => {
+            const settingsItem = document.createElement('div');
+            settingsItem.className = 'dynamic-field-settings-item';
+
+            const visibilityCheckbox = document.createElement('input');
+            visibilityCheckbox.type = 'checkbox';
+            visibilityCheckbox.checked = field.isVisible;
+            visibilityCheckbox.title = 'Show/Hide this field';
+            visibilityCheckbox.addEventListener('change', () => {
+                toggleCustomFieldVisibility(field.id, visibilityCheckbox.checked);
+            });
+            
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = field.name;
+            nameInput.addEventListener('input', () => {
+                renameCustomField(field.id, nameInput.value);
+            });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Del';
+            deleteBtn.className = 'clear-button';
+            deleteBtn.title = 'Delete this custom field';
+            deleteBtn.addEventListener('click', () => deleteCustomField(field.id));
+            
+            settingsItem.appendChild(visibilityCheckbox);
+            settingsItem.appendChild(nameInput);
+            settingsItem.appendChild(deleteBtn);
+            dynamicFieldsSettingsContainer.appendChild(settingsItem);
+        });
+    }
+
+    function addNewCustomField() {
+        const newField = {
+            id: generateId(),
+            name: `Custom Field ${customFields.length + 1}`,
+            content: '',
+            isVisible: true
+        };
+        customFields.push(newField);
+        saveCustomFields();
+        renderCustomFields();
+        renderCustomFieldsSettings();
+    }
+
+    function renameCustomField(id, newName) {
+        const field = customFields.find(f => f.id === id);
+        if (field) {
+            field.name = newName;
+            saveCustomFields();
+            const heading = dynamicFieldsContainer.querySelector(`#dyn-field-wrapper-${id} h3`);
+            if(heading) heading.textContent = newName;
+        }
+    }
+    
+    function updateCustomFieldContent(id, newContent) {
+        const field = customFields.find(f => f.id === id);
+        if(field) {
+            field.content = newContent;
+            saveCustomFields();
+        }
+    }
+
+    function deleteCustomField(id) {
+        if(confirm('Are you sure you want to delete this custom field?')) {
+            customFields = customFields.filter(f => f.id !== id);
+            saveCustomFields();
+            renderCustomFields();
+            renderCustomFieldsSettings();
+        }
+    }
+
+    function toggleCustomFieldVisibility(id, isVisible) {
+        const field = customFields.find(f => f.id === id);
+        if(field) {
+            field.isVisible = isVisible;
+            saveCustomFields();
+            const fieldWrapper = document.getElementById(`dyn-field-wrapper-${id}`);
+            if(fieldWrapper) {
+                fieldWrapper.classList.toggle('hidden', !isVisible);
+            }
+        }
+    }
+
+    function saveCustomFields() {
+        localStorage.setItem(`${currentInstanceId}_${DYNAMIC_FIELDS_KEY}`, JSON.stringify(customFields));
+    }
+
+    function loadCustomFields() {
+        const savedData = localStorage.getItem(`${currentInstanceId}_${DYNAMIC_FIELDS_KEY}`);
+        if(savedData) {
+            customFields = JSON.parse(savedData);
+        } else {
+            customFields = [];
+        }
+        renderCustomFields();
+        renderCustomFieldsSettings();
+    }
+
+    function renderTodoList() {
+        if (!todoListContainer) return;
+        todoListContainer.innerHTML = ''; 
+        todoItems.forEach(item => {
+            const listItem = document.createElement('div');
+            listItem.classList.add('todo-item');
+            if (item.completed) listItem.classList.add('completed');
+            listItem.dataset.id = item.id;
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = item.completed;
+            checkbox.addEventListener('change', () => toggleTodoStatus(item.id));
+            const textSpan = document.createElement('span');
+            textSpan.classList.add('todo-text');
+            textSpan.textContent = item.text;
+            const deleteBtn = document.createElement('button');
+            deleteBtn.classList.add('delete-todo-btn');
+            deleteBtn.innerHTML = '&times;'; 
+            deleteBtn.addEventListener('click', () => deleteTodoItem(item.id));
+            listItem.appendChild(checkbox);
+            listItem.appendChild(textSpan);
+            listItem.appendChild(deleteBtn);
+            todoListContainer.appendChild(listItem);
+        });
+    }
+    function addTodo() {
+        if (!newTodoInput) return;
+        const text = newTodoInput.value.trim();
+        if (text === '') { alert("Please enter a to-do item."); return; }
+        const newItem = { id: generateId(), text: text, completed: false };
+        todoItems.push(newItem);
+        saveTodoListData(); renderTodoList();
+        newTodoInput.value = ''; newTodoInput.focus();
+    }
+    function toggleTodoStatus(id) {
+        const itemIndex = todoItems.findIndex(item => item.id === id);
+        if (itemIndex > -1) {
+            todoItems[itemIndex].completed = !todoItems[itemIndex].completed;
+            saveTodoListData(); renderTodoList();
+        }
+    }
+    function deleteTodoItem(id) {
+        todoItems = todoItems.filter(item => item.id !== id);
+        saveTodoListData(); renderTodoList();
+    }
+    function saveTodoListData() { localStorage.setItem(`${currentInstanceId}_${fieldsConfig.todoList.dataKey}`, JSON.stringify(todoItems)); }
+    function loadTodoListData() {
+        const savedTodos = localStorage.getItem(`${currentInstanceId}_${fieldsConfig.todoList.dataKey}`);
+        if (savedTodos) todoItems = JSON.parse(savedTodos);
+        else todoItems = []; 
+        renderTodoList();
+    }
+
+    function toggleFields() {
+      const callerType = document.getElementById("callerType").value;
+      const identifierSection = document.getElementById("identifierSection");
+      const clientNameSection = document.getElementById("clientNameSection");
+      const nameRequiredAsterisk = document.getElementById("nameRequiredAsterisk");
+      const verifiedRequiredAsterisk = document.getElementById("verifiedRequiredAsterisk");
+      const showApplicantName = document.getElementById("toggleApplicantName").checked;
+
+      if (callerType === "Applicant") {
+        identifierSection.classList.remove("hidden");
+        verifiedRequiredAsterisk.classList.remove("hidden");
+        clientNameSection.classList.toggle('hidden', !showApplicantName);
+        nameRequiredAsterisk.classList.add("hidden"); 
+      } else { // Client or Third Party
+        identifierSection.classList.add("hidden");
+        verifiedRequiredAsterisk.classList.add("hidden");
+        clientNameSection.classList.remove("hidden"); 
+        nameRequiredAsterisk.classList.remove("hidden"); 
+      }
+      
+      updateCallPreview(); 
+    }
+    function updateIdentifierDisplay() {
+      const ids = [];
+      if (document.getElementById("identifier1").checked) ids.push("Name");
+      if (document.getElementById("identifier2").checked) ids.push("DOB");
+      if (document.getElementById("identifier3").checked) ids.push("Reference #");
+	  if (document.getElementById("identifier4").checked) ids.push("Last 4 SSN");
+      if (document.getElementById("identifierNA").checked) ids.push("N/A");
+      document.getElementById("identifierDisplay").value = ids.join(", ");
+    }
+    async function copyToClipboard() {
+      const c = document.getElementById("called").checked, e = document.getElementById("emailed").checked, p = document.getElementById("portalmessage").checked, o = document.getElementById("outbound").checked;
+      const ct = document.getElementById("callerType").value, cn = document.getElementById("clientName").value.trim(), nt = document.getElementById("callNotes").value.trim();
+      const tktNum = document.getElementById("ticketNumber").value.trim();
+      
+      if (!c && !e && !p && !o) { alert("Please select at least one contact method."); return; }
+      const fn = document.getElementById("fileNumber").value.trim();
+      if (fn === "") { alert("File Number is required."); return; }
+      if (ct !== 'Applicant' && cn === '') { alert("Name is required for Client or Third Party."); return; }
+      
+      const isVerified = ['identifier1', 'identifier2', 'identifier3', 'identifier4', 'identifierNA'].some(id => document.getElementById(id).checked);
+      if (ct === 'Applicant' && !isVerified) {
+          alert("Verification is required for Applicant.");
+          return;
+      }
+      
+      if (e && tktNum === '') { // If emailed is checked, ticket number is required
+          alert("Ticket Number is required when Emailed is selected.");
+          return;
+      }
+      
+      let cms = []; 
+      if (c) cms.push("Called"); 
+      if (e) cms.push("Emailed"); 
+      if (p) cms.push("Portal");
+      if (o) cms.push("Outbound Call");
+      let cmStr = cms.join(", "), fmtTxt = "";
+      
+      if (ct === 'Applicant') {
+        const idTxt = document.getElementById("identifierDisplay").value;
+        const isNaChecked = document.getElementById('identifierNA').checked;
+        const areOthersChecked = ['identifier1', 'identifier2', 'identifier3', 'identifier4'].some(id => document.getElementById(id).checked);
+
+        if (idTxt && !(isNaChecked && !areOthersChecked)) {
+          fmtTxt += `Identifiers: ${idTxt}\n`;
+        }
+        fmtTxt += `${ct} ${cmStr}: ${nt}`;
+      } else {
+        fmtTxt += `${ct}: ${cn}\n`;
+        fmtTxt += `${cmStr}: ${nt}`;
+      }
+      
+      if (tktNum) {
+          fmtTxt += `\n${tktNum}`;
+      }
+
+      try { await navigator.clipboard.writeText(fmtTxt); alert("Call log copied!"); saveLog(); }
+      catch (err) { console.error("Failed to copy text: ", err); alert("Failed to copy text: " + err); }
+    }
+    function clearFields() {
+      ["callerType", "clientName", "identifierDisplay", "fileNumber", "confirmationNumber", "callNotes", "callPreview", "ticketNumber"].forEach(id => {
+        const el = document.getElementById(id); if(el) { if(el.type === 'select-one') el.value = "Client"; else el.value = ""; }
+      });
+      ["identifier1", "identifier2", "identifier3", "identifier4", "identifierNA", "called", "emailed", "portalmessage", "outbound"].forEach(id => {
+        const el = document.getElementById(id); if(el) el.checked = false;
+      });
+      toggleFields(); 
+    }
+    function addTemplate(text) {
+      const callNotesEl = document.getElementById("callNotes");
+      callNotesEl.value = callNotesEl.value.trim() + (callNotesEl.value.trim() ? " " : "") + text;
+    }
+    function updateCallPreview() {
+      const callerTypeVal = document.getElementById("callerType").value; let clientNameVal = document.getElementById("clientName").value.trim(); let contactMethodsArr = [];
+      if (document.getElementById("called").checked) contactMethodsArr.push("called");
+      if (document.getElementById("emailed").checked) contactMethodsArr.push("emailed");
+      if (document.getElementById("portalmessage").checked) contactMethodsArr.push("portal message");
+      if (document.getElementById("outbound").checked) contactMethodsArr.push("outbound call");
+      let previewTextVal = callerTypeVal; if (clientNameVal) previewTextVal += " | " + clientNameVal;
+      if (contactMethodsArr.length > 0) previewTextVal += " " + contactMethodsArr.join(", ");
+      document.getElementById("callPreview").value = previewTextVal;
+    }
+    
+    function handleIdentifierChange(event) {
+        const naCheckbox = document.getElementById('identifierNA');
+        const otherCheckboxes = [
+            document.getElementById('identifier1'),
+            document.getElementById('identifier2'),
+            document.getElementById('identifier3'),
+            document.getElementById('identifier4')
+        ];
+        
+        if (event.target.id === 'identifierNA' && naCheckbox.checked) {
+            otherCheckboxes.forEach(cb => cb.checked = false);
+        } else if (otherCheckboxes.some(cb => cb.id === event.target.id) && event.target.checked) {
+            naCheckbox.checked = false;
+        }
+        
+        updateIdentifierDisplay();
+    }
+    
+    function saveApplicantNameToggle(value) {
+        localStorage.setItem(`${currentInstanceId}_showApplicantName`, value);
+    }
+    function loadApplicantNameToggle() {
+        const toggle = document.getElementById('toggleApplicantName');
+        if (toggle) {
+            const savedValue = localStorage.getItem(`${currentInstanceId}_showApplicantName`);
+            toggle.checked = savedValue === 'true'; 
+            toggle.addEventListener('change', (e) => {
+                saveApplicantNameToggle(e.target.checked);
+                toggleFields();
+            });
+        }
+    }
+    
+    function toggleTicketRequirement() {
+        const isEmailed = document.getElementById('emailed').checked;
+        const asterisk = document.getElementById('ticketRequiredAsterisk');
+        if (asterisk) {
+            asterisk.classList.toggle('hidden', !isEmailed);
+        }
+    }
+
+
+	function saveLog() {
+      const ctVal=document.getElementById("callerType").value, clnVal=document.getElementById("clientName").value.trim(), ntsVal=document.getElementById("callNotes").value.trim();
+      const idTxtVal=document.getElementById("identifierDisplay").value, fnVal=document.getElementById("fileNumber").value.trim(), confNVal=document.getElementById("confirmationNumber").value.trim();
+      const tktNumVal = document.getElementById("ticketNumber").value.trim(); 
+      let cmsArr=[]; 
+      if(document.getElementById("called").checked)cmsArr.push("Called"); 
+      if(document.getElementById("emailed").checked)cmsArr.push("Emailed"); 
+      if(document.getElementById("portalmessage").checked)cmsArr.push("Portal Message");
+      if(document.getElementById("outbound").checked)cmsArr.push("Outbound Call");
+      
+      let entryStr=`[${new Date().toLocaleString()}] ${ctVal}`; 
+      if(clnVal) entryStr+=` | Name: ${clnVal}`;
+      if(cmsArr.length>0) entryStr+=` (${cmsArr.join(", ")})`;
+      if(fnVal) entryStr+=` | File #: ${fnVal}`; 
+      if(tktNumVal) entryStr+=` | Ticket #: ${tktNumVal}`; 
+      if(confNVal) entryStr+=` | Additional Information: ${confNVal}`; 
+      if(idTxtVal && ctVal === 'Applicant') entryStr+=` | Identifiers: ${idTxtVal}`;
+      entryStr+=` | Notes: ${ntsVal}`;
+      
+      let logsArr=JSON.parse(localStorage.getItem(GLOBAL_AUDIT_LOG_KEY))||[]; 
+      logsArr.push(entryStr); localStorage.setItem(GLOBAL_AUDIT_LOG_KEY,JSON.stringify(logsArr)); 
+      displayLogHistory();
+    }
+    function displayLogHistory() { 
+        let logsArr=JSON.parse(localStorage.getItem(GLOBAL_AUDIT_LOG_KEY))||[]; 
+        document.getElementById("logHistory").value=logsArr.slice().reverse().join("\n\n");
+    } 
+    function clearLogHistory() { 
+        if(confirm("Are you sure you want to clear the audit log? This will make Hogan sad.")){
+            localStorage.removeItem(GLOBAL_AUDIT_LOG_KEY);
+            displayLogHistory();
+        }
+    } 
+    
+    function saveFieldData(textareaId, storageKey) { const taEl=document.getElementById(textareaId); if(taEl)localStorage.setItem(`${currentInstanceId}_${storageKey}`,taEl.value);}
+    function loadFieldData(textareaId, storageKey) { const taEl=document.getElementById(textareaId); if(taEl){const sdVal=localStorage.getItem(`${currentInstanceId}_${storageKey}`);if(sdVal!==null)taEl.value=sdVal;}}
+    function toggleSectionVisibility(chkId,secId,visKey){const chkEl=document.getElementById(chkId),secEl=document.getElementById(secId);if(chkEl&&secEl){if(chkEl.checked){secEl.classList.remove('hidden');localStorage.setItem(`${currentInstanceId}_${visKey}`,'true');}else{secEl.classList.add('hidden');localStorage.setItem(`${currentInstanceId}_${visKey}`,'false');}}} 
+    function loadSectionVisibility(chkId,secId,visKey,defVis=false){const chkEl=document.getElementById(chkId),secEl=document.getElementById(secId);if(chkEl&&secEl){const svVal=localStorage.getItem(`${currentInstanceId}_${visKey}`);let ivVal=defVis;if(svVal!==null)ivVal=svVal==='true';chkEl.checked=ivVal;if(ivVal)secEl.classList.remove('hidden');else secEl.classList.add('hidden');}} 
+    
+    const slSPEl=document.getElementById('slidingSettingsPanel'),opSBEl=document.getElementById('openSettingsBtn'),clSBEl=document.getElementById('closeSettingsBtn'),ovlEl=document.getElementById('overlay');
+    const openNewInstanceBtnMain = document.getElementById('openNewInstanceBtnMain');
+
+    function openSettingsPanel(){slSPEl.classList.add('open');ovlEl.classList.add('active');}
+    function closeSettingsPanel(){slSPEl.classList.remove('open');ovlEl.classList.remove('active');}
+
+    function handleOpenNewInstance() {
+        const newId = 'simpliNotes_instance_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        window.open(window.location.pathname + '?instance=' + newId, '_blank');
+    }
+
+    window.onload = function () {
+      initializeInstance(); 
+      loadApplicantNameToggle();
+      toggleFields(); 
+      displayLogHistory(); 
+
+      // Whitelist the font sizes you want to use
+let Size = Quill.import('attributors/style/size');
+Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '24px', '32px'];
+Quill.register(Size, true);
+// --- End of new block ---
+
+// Initialize Quill (this part is modified)
+const quill = new Quill('#' + fieldsConfig.richText.editorContainerId, {
+    theme: 'snow', 
+    modules: {
+        toolbar: [
+            // Replace the 'header' option with your new 'size' option
+            [{ 'size': ['10px', '12px', '14px', '16px', '18px', '24px', '32px', false] }],
+            ['bold', 'italic', 'underline'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'font': [] }],
+            [{ 'align': [] }],
+        ]
+    },
+    placeholder: 'Enter your richly formatted notes here...'
+});
+
+    // Load saved content
+    const savedRichText = localStorage.getItem(`${currentInstanceId}_${fieldsConfig.richText.dataKey}`);
+    if (savedRichText) {
+        quill.setContents(JSON.parse(savedRichText));
+    }
+
+    // Save content on change
+    quill.on('text-change', function() {
+        localStorage.setItem(`${currentInstanceId}_${fieldsConfig.richText.dataKey}`, JSON.stringify(quill.getContents()));
+    });
+
+      for (const fieldKey in fieldsConfig) {
+          const config = fieldsConfig[fieldKey];
+          if (config.toggleCheckboxId) {
+            loadSectionVisibility(config.toggleCheckboxId, config.sectionId, config.visibleKey, config.defaultVisible);
+            const toggleCheckbox = document.getElementById(config.toggleCheckboxId);
+            if (toggleCheckbox) {
+                toggleCheckbox.addEventListener('change', () => {
+                    toggleSectionVisibility(config.toggleCheckboxId, config.sectionId, config.visibleKey);
+                });
+            }
+          }
+
+          if (fieldKey === 'todoList') {
+              loadTodoListData();
+          } else if (config.textareaId) { 
+              loadFieldData(config.textareaId, config.dataKey);
+              const textarea = document.getElementById(config.textareaId);
+              if (textarea) {
+                  textarea.addEventListener('input', () => {
+                      saveFieldData(config.textareaId, config.dataKey);
+                  });
+              }
+          }
+      }
+      
+      loadCustomFields(); 
+      
+      document.querySelectorAll(".identifier-group input[type='checkbox']").forEach(i => i.addEventListener("change", handleIdentifierChange));
+      document.querySelector(".contact-group").addEventListener('change', (e) => {
+        updateCallPreview();
+        if(e.target.id === 'emailed') {
+            toggleTicketRequirement();
+        }
+      });
+      document.getElementById("clientName").addEventListener("input", updateCallPreview);
+      
+      if (opSBEl) opSBEl.addEventListener('click', openSettingsPanel);
+      if (clSBEl) clSBEl.addEventListener('click', closeSettingsPanel);
+      if (ovlEl) ovlEl.addEventListener('click', closeSettingsPanel);
+      if (addTodoBtn) addTodoBtn.addEventListener('click', addTodo);
+      if (newTodoInput) {
+          newTodoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addTodo(); }});
+      }
+      if(openNewInstanceBtnMain) { 
+          openNewInstanceBtnMain.addEventListener('click', handleOpenNewInstance);
+      }
+      if(addNewFieldBtn) {
+          addNewFieldBtn.addEventListener('click', addNewCustomField);
+      }
+      toggleTicketRequirement(); // Initial check on page load
+    };
+  </script>
+</body>
+</html>
